@@ -35,4 +35,5 @@ pipeline {
        app.push("latest")
     */
     }
+  }
 }
