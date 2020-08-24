@@ -8,7 +8,7 @@ def workdir = "${workspace}/src/localhost/docker-jenkins/"
 def ecrRepoName = "my-jenkins"
 def tag = "$ecrRepoName:latest"
 
-podTemplate(label: label,
+podTemplate(label: label, workingDir: '/home/jenkins/agent',
         containers: [
                 containerTemplate(name: 'jnlp', image: 'jenkins/jnlp-slave:alpine'),
                 containerTemplate(name: 'docker', image: 'docker:dind', command: 'cat', ttyEnabled: true, privileged: true),
