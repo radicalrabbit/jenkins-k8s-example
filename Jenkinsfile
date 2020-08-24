@@ -23,11 +23,19 @@ podTemplate(label: label,
             }
 
             stage('Docker Build') {
-                container('docker') {
-                    echo "Building docker image..."
-                    sh "docker build -t $tag -f jenkins-docker/Dockerfile ."
+                echo "Building docker image..."
+                script {
+                    // we set BRANCH_NAME to make when { branch } syntax work without multibranch job
+                    env.BRANCH_NAME = commit.GIT_BRANCH.replace('origin/', '')
+
+                    dockerImage = docker.build("myImage:${env.BUILD_ID}",
+                        "--label \"GIT_COMMIT=${env.GIT_COMMIT}\""
+                        + " --build-arg MY_ARG=myArg"
+                        + " ."
+                    )
                 }
             }
         }
     }
 }
+
