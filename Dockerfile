@@ -12,6 +12,11 @@ RUN apk add --update --no-cache curl bash git openssh-client openssl procps \
  && chmod 644 /usr/share/jenkins/slave.jar \
  && apk del curl
 
+RUN curl -fsSLO https://get.docker.com/builds/Linux/x86_64/docker-17.04.0-ce.tgz \
+  && tar xzvf docker-17.04.0-ce.tgz \
+  && mv docker/docker /usr/local/bin \
+  && rm -r docker docker-17.04.0-ce.tgz
+
 ENV AGENT_WORKDIR=${AGENT_WORKDIR}
 RUN mkdir -p /home/${user}/.jenkins && mkdir -p ${AGENT_WORKDIR}
 USER ${user}
