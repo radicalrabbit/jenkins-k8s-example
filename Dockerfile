@@ -1,26 +1,41 @@
-FROM alpine:latest
+FROM jenkins/jenkins:2.73.2
+
+MAINTAINER alex@radicalrabbit.de
+
+# install docker, docker-compose, docker-machine
+# see: https://docs.docker.com/engine/installation/linux/docker-ce/ubuntu/
+# see: https://docs.docker.com/engine/installation/linux/linux-postinstall/
+# see: https://docs.docker.com/engine/userguide/eng-image/dockerfile_best-practices/
+
 USER root
-ARG user=jenkins
 
-ENV HOME /home/${user}
-ARG VERSION=3.26
-ARG AGENT_WORKDIR=/home/${user}/agent
+# prerequisites for docker
+RUN apt-get update \
+    && apt-get -y install \
+        apt-transport-https \
+        ca-certificates \
+        curl \
+        software-properties-common
 
-RUN apk add --update --no-cache curl bash git openssh-client openssl procps \
- && curl --create-dirs -sSLo /usr/share/jenkins/slave.jar https://repo.jenkins-ci.org/public/org/jenkins-ci/main/remoting/${VERSION}/remoting-${VERSION}.jar \
- && chmod 755 /usr/share/jenkins \
- && chmod 644 /usr/share/jenkins/slave.jar \
- && apk del curl
+# docker repos
+RUN curl -fsSL https://download.docker.com/linux/ubuntu/gpg | apt-key add - \
+    && echo "deb [arch=amd64] https://download.docker.com/linux/ubuntu xenial stable" >> /etc/apt/sources.list.d/additional-repositories.list \
+    && echo "deb http://ftp-stud.hs-esslingen.de/ubuntu xenial main restricted universe multiverse" >> /etc/apt/sources.list.d/official-package-repositories.list \
+    && apt-key adv --keyserver keyserver.ubuntu.com --recv-keys 437D05B5 \
+    && apt-get update
 
-RUN curl -fsSLO https://get.docker.com/builds/Linux/x86_64/docker-17.04.0-ce.tgz \
-  && tar xzvf docker-17.04.0-ce.tgz \
-  && mv docker/docker /usr/local/bin \
-  && rm -r docker docker-17.04.0-ce.tgz
+RUN curl -O https://download.docker.com/linux/ubuntu/dists/bionic/pool/edge/amd64/containerd.io_1.2.2-3_amd64.deb
 
-ENV AGENT_WORKDIR=${AGENT_WORKDIR}
-RUN mkdir -p /home/${user}/.jenkins && mkdir -p ${AGENT_WORKDIR}
-USER ${user}
+RUN apt-get install ./containerd.io_1.2.2-3_amd64.deb
 
-VOLUME /home/${user}/.jenkins
-VOLUME ${AGENT_WORKDIR}
-WORKDIR /home/${user}
+# docker
+RUN apt-get -y install docker-ce
+
+# docker-compose
+RUN curl -L https://github.com/docker/compose/releases/download/1.16.1/docker-compose-`uname -s`-`uname -m` -o /usr/local/bin/docker-compose \
+    && chmod +x /usr/local/bin/docker-compose
+
+# give jenkins docker rights
+RUN usermod -aG docker jenkins
+
+USER jenkins
